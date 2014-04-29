@@ -11,7 +11,7 @@ json11
 
 json11 is a tiny JSON library for C++11, providing JSON parsing and serialization.
 
-The core object provided by the library is json11::Json. A Json object represents any JSON
+The core object provided by the library is json11::Value. A Json object represents any JSON
 value: null, bool, number (int or double), string (std::string), array (std::vector), or
 object (std::map).
 
@@ -21,7 +21,7 @@ json11::parse (static) to parse a std::string as a Json object.
 
 It's easy to make a JSON object with C++11's new initializer syntax:
 
-    Json my_json = json11::Object {
+    json11::Value my_json = json11::Object {
         { "key1", "value1" },
         { "key2", false },
         { "key3", json11::Array { 1, 2, 3 } },
@@ -36,7 +36,7 @@ automatically converted to JSON. For example:
         int x;
         int y;
         Point (int x, int y) : x(x), y(y) {}
-        Json to_json() const { return json11::Array { x, y }; }
+        json11::Value to_json() const { return json11::Array { x, y }; }
     };
 
     std::vector<Point> points = { { 1, 2 }, { 10, 20 }, { 100, 200 } };
@@ -44,7 +44,7 @@ automatically converted to JSON. For example:
 
 JSON values can have their values queried and inspected:
 
-    Json json = json11::Array { json11::Object { { "k", "v" } } };
+    json11::Value json = json11::Array { json11::Object { { "k", "v" } } };
     std::string str = json[0]["k"].string_value();
 
 More documentation is still to come. For now, see json11.hpp.
