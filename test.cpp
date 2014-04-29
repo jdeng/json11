@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     std::cout << "k1: " << json["k1"].string_value() << "\n";
     std::cout << "k3: " << json["k3"].to_string() << "\n";
 
-    for (auto &k : json["k3"].array_items()) {
+    for (auto &k : json["k3"].array_value()) {
         std::cout << "    - " << k.to_string() << "\n";
     }
 

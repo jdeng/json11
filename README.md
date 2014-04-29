@@ -39,7 +39,7 @@ automatically converted to JSON. For example:
     };
 
     std::vector<Point> points = { { 1, 2 }, { 10, 20 }, { 100, 200 } };
-    std::string points_json = Json(points).to_string();
+    std::string points_json = json11::Value(points).to_string();
 
 JSON values can have their values queried and inspected:
 

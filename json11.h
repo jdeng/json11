@@ -155,12 +155,12 @@ public:
     }
 
     // Return the enclosed std::vector if this is an Array, or an empty vector otherwise.
-    const Array &array_items() const {
+    const Array &array_value() const {
       static Array empty_array;
       return type_ == ARRAY && value_.a_? *value_.a_: empty_array;
     }
     // Return the enclosed std::map if this is an Object, or an empty map otherwise.
-    const Object &object_items() const {
+    const Object &object_value() const {
       static Object empty_object;
       return type_ == OBJECT && value_.o_? *value_.o_: empty_object;
     }
@@ -182,6 +182,7 @@ public:
       if (type_ == NUL) { 
         type_ = OBJECT; value_.o_ = new Object();
       }
+      // assert
       return (*value_.o_)[key];
     }
 
@@ -199,69 +200,6 @@ public:
       return true;
     }
     bool append(const Value& o) { return append(Value(o));}
-
-    // Serialize.
-    static void escape(const std::string &value, std::string &out) {
-      out += '"';
-      for (size_t i = 0; i < value.length(); i++) {
-        const char ch = value[i];
-        if (ch == '\\') {
-            out += "\\\\";
-        } else if (ch == '"') {
-            out += "\\\"";
-        } else if (ch == '\b') {
-            out += "\\b";
-        } else if (ch == '\f') {
-            out += "\\f";
-        } else if (ch == '\n') {
-            out += "\\n";
-        } else if (ch == '\r') {
-            out += "\\r";
-        } else if (ch == '\t') {
-            out += "\\t";
-        } else if ((uint8_t)ch <= 0x1f) {
-            char buf[8];
-            snprintf(buf, sizeof buf, "\\u%04x", ch);
-            out += buf;
-        } else if ((uint8_t)ch == 0xe2 && (uint8_t)value[i+1] == 0x80
-                   && (uint8_t)value[i+2] == 0xa8) {
-            out += "\\u2028";
-            i += 2;
-        } else if ((uint8_t)ch == 0xe2 && (uint8_t)value[i+1] == 0x80
-                   && (uint8_t)value[i+2] == 0xa9) {
-            out += "\\u2029";
-            i += 2;
-        } else {
-            out += ch;
-        }
-      }
-      out += '"';
-    }
-
-    static void to_string(const Array &values, std::string &out) {
-      bool first = true;
-      out += "[";
-      for (auto &value : values) {
-        if (!first)
-            out += ", ";
-        value.to_string(out);
-        first = false;
-      }
-      out += "]";
-    }
-
-    static void to_string(const Object &values, std::string &out) {
-      bool first = true;
-      out += "{";
-      for (const auto &kv : values) {
-        if (!first) out += ", ";
-        escape(kv.first, out);
-        out += ": ";
-        kv.second.to_string(out);
-        first = false;
-      }
-      out += "}";
-    }
 
     void to_string(std::string &out) const {
       switch(type_) {
@@ -323,8 +261,8 @@ public:
      * Return true if this is a JSON Object and, for each item in types, has a field of
      * the given type. If not, return false and set err to a descriptive message.
      */
-    typedef std::initializer_list<std::pair<std::string, Type>> shape;
-    bool has_shape(const shape & types, std::string & err) const {
+    typedef std::initializer_list<std::pair<std::string, Type>> Shape;
+    bool has_shape(const Shape & types, std::string & err) const {
       if (!is_object()) {
         err = "expected JSON object, got " + to_string();
         return false;
@@ -373,6 +311,69 @@ private:
     if (type_ == STRING) value_.s_ = new std::string(*value_.s_);
     else if (type_ == ARRAY) value_.a_ = new Array(*value_.a_);
     else if (type_ == OBJECT) value_.o_ = new Object(*value_.o_);
+  }
+
+    // Serialize.
+  static void escape(const std::string &value, std::string &out) {
+      out += '"';
+      for (size_t i = 0; i < value.length(); i++) {
+        const char ch = value[i];
+        if (ch == '\\') {
+            out += "\\\\";
+        } else if (ch == '"') {
+            out += "\\\"";
+        } else if (ch == '\b') {
+            out += "\\b";
+        } else if (ch == '\f') {
+            out += "\\f";
+        } else if (ch == '\n') {
+            out += "\\n";
+        } else if (ch == '\r') {
+            out += "\\r";
+        } else if (ch == '\t') {
+            out += "\\t";
+        } else if ((uint8_t)ch <= 0x1f) {
+            char buf[8];
+            snprintf(buf, sizeof buf, "\\u%04x", ch);
+            out += buf;
+        } else if ((uint8_t)ch == 0xe2 && (uint8_t)value[i+1] == 0x80
+                   && (uint8_t)value[i+2] == 0xa8) {
+            out += "\\u2028";
+            i += 2;
+        } else if ((uint8_t)ch == 0xe2 && (uint8_t)value[i+1] == 0x80
+                   && (uint8_t)value[i+2] == 0xa9) {
+            out += "\\u2029";
+            i += 2;
+        } else {
+            out += ch;
+        }
+      }
+      out += '"';
+  }
+
+  static void to_string(const Array &values, std::string &out) {
+      bool first = true;
+      out += "[";
+      for (auto &value : values) {
+        if (!first)
+            out += ", ";
+        value.to_string(out);
+        first = false;
+      }
+      out += "]";
+  }
+
+  static void to_string(const Object &values, std::string &out) {
+      bool first = true;
+      out += "{";
+      for (const auto &kv : values) {
+        if (!first) out += ", ";
+        escape(kv.first, out);
+        out += ": ";
+        kv.second.to_string(out);
+        first = false;
+      }
+      out += "}";
   }
 };
 

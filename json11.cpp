@@ -26,7 +26,6 @@
 #include <limits>
 #include <type_traits>
 
-
 namespace json11 {
 
 // Check that Value has the properties we want.
