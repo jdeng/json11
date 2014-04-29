@@ -1,9 +1,10 @@
-Changes
+Changes to Dropbox's original version
 -----
 
  * Removed std::smart_ptr and virtual functions.
- * Renamed Json to Value, Json::object to Object, Json::array to Array, Json::dump to Value::dump, Json::parse to parse.
-
+ * Renamed Json to Value, Json::object to Object, Json::array to Array, Json::dump to Value::to_string, Json::parse to parse.
+ * Made json object and serialization header file only. (parser is still in .cpp)
+ * Added append() for arrays and non-const reference operator [].  
 
 json11
 ------

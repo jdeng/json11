@@ -182,7 +182,7 @@ public:
       if (type_ == NUL) { 
         type_ = OBJECT; value_.o_ = new Object();
       }
-      // assert
+      //XXX: assert(value_.o_);
       return (*value_.o_)[key];
     }
 
