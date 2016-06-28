@@ -337,7 +337,7 @@ struct JsonParser {
             std::map<std::string, Value> data;
             ch = get_next_token();
             if (ch == '}')
-                return data;
+                return std::move(data);
 
             while (1) {
                 if (ch != '"')
@@ -363,14 +363,14 @@ struct JsonParser {
 
                 ch = get_next_token();
             }
-            return data;
+            return std::move(data);
         }
 
         if (ch == '[') {
             std::vector<Value> data;
             ch = get_next_token();
             if (ch == ']')
-                return data;
+                return std::move(data);
 
             while (1) {
                 i--;
@@ -387,7 +387,7 @@ struct JsonParser {
                 ch = get_next_token();
                 (void)ch;
             }
-            return data;
+            return std::move(data);
         }
 
         return fail("expected value, got " + esc(ch));
