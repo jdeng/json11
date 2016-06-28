@@ -28,6 +28,8 @@
 
 namespace json11 {
 
+static const int max_depth = 200;
+
 // Check that Value has the properties we want.
 #define CHECK_TRAIT(x) static_assert(std::x::value, #x)
 CHECK_TRAIT(is_nothrow_constructible<Value>);
@@ -174,6 +176,13 @@ struct JsonParser {
             if (ch == 'u') {
                 // Extract 4-byte escape sequence
                 std::string esc = str.substr(i, 4);
+                // Explicitly check length of the substring. The following loop
+                // relies on std::string returning the terminating NUL when
+                // accessing str[length]. Checking here reduces brittleness.
+                if (esc.length() < 4) {
+                    return fail("bad \\u escape: " + esc, "");
+                }
+
                 for (int j = 0; j < 4; j++) {
                     if (!in_range(esc[j], 'a', 'f') && !in_range(esc[j], 'A', 'F')
                             && !in_range(esc[j], '0', '9'))
@@ -275,7 +284,7 @@ struct JsonParser {
                 i++;
         }
 
-        return std::atof(str.c_str() + start_pos);
+        return std::strtod(str.c_str() + start_pos, nullptr);
     }
 
     /* expect(str, res)
@@ -286,12 +295,11 @@ struct JsonParser {
     Value expect(const std::string &expected, Value res) {
         assert(i != 0);
         i--;
-        const std::string found = str.substr(i, expected.length());
-        if (expected == found) {
+        if (str.compare(i, expected.length(), expected) == 0) {
             i += expected.length();
             return res;
         } else {
-            return fail("parse error: expected " + expected + ", got " + found);
+            return fail("parse error: expected " + expected + ", got " + str.substr(i, expected.length()));
         }
     }
 
@@ -299,7 +307,11 @@ struct JsonParser {
      *
      * Parse a JSON object.
      */
-    Value parse_json() {
+    Value parse_json(int depth) {
+        if (depth > max_depth) {
+            return fail("exceeded maximum nesting depth");
+        }
+
         char ch = get_next_token();
         if (failed)
             return Value();
@@ -339,7 +351,7 @@ struct JsonParser {
                 if (ch != ':')
                     return fail("expected ':' in object, got " + esc(ch));
 
-                data[std::move(key)] = parse_json();
+                data[std::move(key)] = parse_json(depth + 1);
                 if (failed)
                     return Value();
 
@@ -362,7 +374,7 @@ struct JsonParser {
 
             while (1) {
                 i--;
-                data.push_back(parse_json());
+                data.push_back(parse_json(depth + 1));
                 if (failed)
                     return Value();
 
@@ -384,7 +396,7 @@ struct JsonParser {
 
 Value parse(const std::string &in, std::string &err) {
     JsonParser parser { in, 0, err, false };
-    Value result = parser.parse_json();
+    Value result = parser.parse_json(0);
 
     // Check for any trailing garbage
     parser.consume_whitespace();
@@ -400,9 +412,10 @@ std::vector<Value> parse_multi(const std::string &in, std::string &err) {
 
     std::vector<Value> vals;
     while (parser.i != in.size() && !parser.failed) {
-        vals.push_back(parser.parse_json());
+        vals.push_back(parser.parse_json(0));
         // Check for another object
         parser.consume_whitespace();
+
     }
     return vals;
 }

@@ -103,14 +103,14 @@ public:
 
     // Implicit constructor: map-like Objects (std::map, std::unordered_map, etc)
     template <class M, typename std::enable_if<
-        std::is_constructible<std::string, decltype(std::declval<M>().begin()->first)>::value
-        && std::is_constructible<Value, decltype(std::declval<M>().begin()->second)>::value,
+        std::is_constructible<std::string, typename M::key_type>::value
+        && std::is_constructible<Value, typename M::mapped_type>::value,
             int>::type = 0>
     Value(const M & m) : Value(Object(m.begin(), m.end())) {}
 
     // Implicit constructor: vector-like Objects (std::list, std::vector, std::set, etc)
     template <class V, typename std::enable_if<
-        std::is_constructible<Value, decltype(*std::declval<V>().begin())>::value,
+        std::is_constructible<Value, typename V::value_type>::value,
             int>::type = 0>
     Value(const V & v) : Value(Array(v.begin(), v.end())) {}
 
@@ -354,7 +354,7 @@ private:
   static void to_string(const Array &values, std::string &out) {
       bool first = true;
       out += "[";
-      for (auto &value : values) {
+      for (const auto &value : values) {
         if (!first)
             out += ", ";
         value.to_string(out);
