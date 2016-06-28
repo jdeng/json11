@@ -374,7 +374,7 @@ struct JsonParser {
 
             while (1) {
                 i--;
-                data.push_back(parse_json(depth + 1));
+                data.emplace_back(parse_json(depth + 1));
                 if (failed)
                     return Value();
 
